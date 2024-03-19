@@ -1,0 +1,58 @@
+syntax = "proto3";
+package mlt;
+option java_package = "com.mlt.metadata";
+option java_outer_classname = "MaplibreTileMetadata";
+
+message TileMetadata{
+	repeated LayerMetadata layers = 1;
+}
+
+//TODO: add additional TileJSON properties for describing the tileset  -> attribution, bounds, center, description, maxzoom, minzoom, scheme, version
+message LayerMetadata{
+	string name = 1;
+	repeated FieldMetadata fields = 2;
+}
+
+// The type tree is flattened in to a list via a pre-order traversal
+message FieldMetadata{
+	string name = 1;
+	//used in the tile instead of the name for identifying the column to save space
+	//uint32 id = 2;
+	//specifies if a present stream will be used in the data
+  bool nullable = 2;
+	DataType dataType = 3;
+	//when column is not of type id or geometry
+	ColumnScope columneScope = 4;
+	//Children apply only to nested data types like Struct, List, Union and Map
+	repeated FieldMetadata children = 5; 
+	//TODO: are coustom metadata (key-value pairs) like in Apache Arrow also needed? 
+}
+
+enum ColumnScope {
+	//1:1 Mapping of property and feature -> id and geometry
+	FEATURE = 0;
+	//For M-Values -> 1:1 Mapping for property and vertex
+	VERTEX = 1;
+}
+
+enum DataType{
+    BOOLEAN = 0;
+    INT_32 = 1;
+    UINT_32 = 2;
+    INT_64 = 3;
+    UINT_64 = 4;
+    FLOAT = 5;
+    DOUBLE = 6;
+    STRING = 7;
+    GEOMETRY = 8;
+    GEOMETRY_Z = 9;
+    BINARY = 10;
+    TIMESTAMP = 11;
+    DATE = 12;
+	  //Is TIME also needed?
+    STRUCT = 13;
+	  LIST = 14;
+    MAP = 15;
+	  //Special data structure which can be used for a efficient representation of linear referencing
+	  RANGE_SET = 16;
+}
