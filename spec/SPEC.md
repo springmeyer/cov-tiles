@@ -78,7 +78,7 @@ The abstinence for an entire field in a tile can be identified by a zero value f
 All integers in the metadata are Varint encoded if u32 is used or bit packed in case
 of a u8 data type.     
 
-![](./feature_table_metadata.png)
+![](../assets/feature_table_metadata.png)
 
 #### 1.2.2 Type system
 
