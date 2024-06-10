@@ -1,3 +1,5 @@
+import { IntWrapper } from "./intWrapper";
+
 export function decodeStringField(buffer: Uint8Array, offset: number): [value: string, offset: number] {
     const [stringLength, strStartOffset] = decodeVarint(buffer, offset);
     offset = strStartOffset + stringLength;
@@ -108,6 +110,58 @@ export function decodeInt64Varints(
     }
 
     return [values, offset];
+}
+
+// public static int[] decodeVarint(byte[] src, IntWrapper pos, int numValues){
+//     var values = new int[numValues];
+//     var dstOffset = 0;
+//     for(var i = 0; i < numValues; i++){
+//         var offset = decodeVarint(src, pos.get(), values, dstOffset);
+//         dstOffset++;
+//         pos.set(offset);
+//     }
+//     return values;
+// }
+
+// private static int decodeVarint(byte[] src, int offset, int[] dst, int dstOffset) {
+//     /*
+//      * Max 4 bytes supported.
+//      * */
+//     var b= src[offset++];
+//     var value = b & 0x7f;
+//     if ((b & 0x80) == 0) {
+//         dst[dstOffset] = value;
+//         return offset;
+//     }
+
+//     b = src[offset++];
+//     value |= (b & 0x7f) << 7;
+//     if ((b & 0x80) == 0) {
+//         dst[dstOffset] = value;
+//         return offset;
+//     }
+
+//     b = src[offset++];
+//     value |= (b & 0x7f) << 14;
+//     if ((b & 0x80) == 0) {
+//         dst[dstOffset] = value;
+//         return offset;
+//     }
+
+//     b = src[offset++];
+//     value |= (b & 0x7f) << 21;
+//     dst[dstOffset] = value;
+//     return offset;
+// }
+
+export function decodeVarintVals(src: Uint8Array, pos : IntWrapper, numValues : number): Uint16Array {
+    const values = new Uint16Array(numValues);
+    for (let i = 0; i < numValues; i++) {
+        const [value, offset] = decodeVarint(src, pos.get());
+        values[i] = value;
+        pos.set(offset);
+    }
+    return values;
 }
 
 /*
@@ -369,22 +423,35 @@ export function decodeNumberRle(buffer: Uint8Array, numValues: number, offset = 
     return [values, offset];
 }
 
+// public static BitSet decodeBooleanRle(byte[] buffer, int numBooleans, int byteSize, IntWrapper pos) throws IOException {
+//     var numBytes = (int)Math.ceil(numBooleans / 8d);
+//     var byteStream = decodeByteRle(buffer, numBytes, byteSize, pos);
+//     //TODO: get rid of that conversion
+//     return BitSet.valueOf(byteStream);
+// }
+
+export function decodeBooleanRle(buffer: Uint8Array, numBooleans: number, byteSize: number, pos: IntWrapper): Uint8Array {
+    const numBytes = Math.ceil(numBooleans / 8);
+    return decodeByteRle(buffer, numBytes, byteSize, pos);
+}
+
 //TODO: implement next method so that not all rle values have to be duplicated
 export function decodeByteRle(
     buffer: Uint8Array,
     numBytesResult: number,
-    offset = 0,
-): [values: Uint8Array, offset: number] {
+    byteSize: number,
+    pos: IntWrapper,
+): Uint8Array {
     const values = new Uint8Array(numBytesResult);
 
     let valueOffset = 0;
     while (valueOffset < numBytesResult) {
-        const header = buffer[offset++];
+        const header = buffer[pos.increment()];
 
         /* Runs */
         if (header <= 0x7f) {
             const numRuns = header + 3;
-            const value = buffer[offset++];
+            const value = buffer[pos.increment()];
             const endValueOffset = valueOffset + numRuns;
             values.fill(value, valueOffset, endValueOffset);
             valueOffset = endValueOffset;
@@ -392,12 +459,12 @@ export function decodeByteRle(
             /* Literals */
             const numLiterals = 256 - header;
             for (let i = 0; i < numLiterals; i++) {
-                values[valueOffset++] = buffer[offset++];
+                values[valueOffset++] = buffer[pos.increment()];
             }
         }
     }
-
-    return [values, offset];
+    pos.add(byteSize);
+    return values;
 }
 
 //TODO: optimize

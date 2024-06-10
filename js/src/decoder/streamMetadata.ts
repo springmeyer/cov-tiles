@@ -1,3 +1,5 @@
+import { IntWrapper } from "./intWrapper";
+
 export enum PhysicalLevelTechnique {
     NONE,
     /* Preferred option, tends to produce the best compression ratio and decoding performance.
@@ -70,20 +72,32 @@ export interface StreamMetadata {
     byteLength: number;
 }
 
-export function decodeStreamMetadata(buffer: Uint8Array, offset: number): [StreamMetadata, number] {
-    let nextOffset = offset;
-    const streamType = buffer[offset++];
-    const physicalStreamType : PhysicalStreamType = Object.values(PhysicalStreamType)[streamType >> 4];
+export function decodeStreamMetadata(tile: Uint8Array, offset: IntWrapper): StreamMetadata {
+    const streamType = tile[offset.get()];
+    const physicalStreamType : PhysicalStreamType = Object.values(PhysicalStreamType)[streamType >> 4] as PhysicalStreamType;
+    let logicalStreamType: LogicalStreamType = null;
 
-    let logicalStreamType, logicalLevelTechnique1, logicalLevelTechnique2, physicalLevelTechnique;
+    switch (physicalStreamType) {
+        case PhysicalStreamType.DATA:
+            logicalStreamType = new LogicalStreamType(DictionaryType.values[streamType & 0x0f]);
+            break;
+        case PhysicalStreamType.OFFSET:
+            logicalStreamType = new LogicalStreamType(OffsetType.values[streamType & 0x0f]);
+            break;
+        case PhysicalStreamType.LENGTH:
+            logicalStreamType = new LogicalStreamType(LengthType.values[streamType & 0x0f]);
+            break;
+    }
+    offset.increment();
 
-    return [{
-        physicalStreamType,
-        logicalStreamType,
-        logicalLevelTechnique1,
-        logicalLevelTechnique2,
-        physicalLevelTechnique,
-        numValues: 0,
-        byteLength: 0
-    }, nextOffset];
+    const encodingsHeader: number = tile[offset.get()] & 0xFF;
+    const logicalLevelTechnique1: LogicalLevelTechnique = LogicalLevelTechnique.values()[encodingsHeader >> 5];
+    const logicalLevelTechnique2: LogicalLevelTechnique = LogicalLevelTechnique.values()[encodingsHeader >> 2 & 0x7];
+    const physicalLevelTechnique: PhysicalLevelTechnique = PhysicalLevelTechnique.values()[encodingsHeader & 0x3];
+    offset.increment();
+    const sizeInfo: [number, number] = DecodingUtils.decodeVarint(tile, offset, 2);
+    const numValues: number = sizeInfo[0];
+    const byteLength: number = sizeInfo[1];
+    return new StreamMetadata(physicalStreamType, logicalStreamType, logicalLevelTechnique1, logicalLevelTechnique2,
+            physicalLevelTechnique, numValues, byteLength);
 }
