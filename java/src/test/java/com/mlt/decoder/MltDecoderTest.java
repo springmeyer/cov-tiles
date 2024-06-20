@@ -1,7 +1,7 @@
 package com.mlt.decoder;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
-
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import com.mlt.TestSettings;
 import com.mlt.converter.ConversionConfig;
 import com.mlt.converter.FeatureTableOptimizations;
@@ -39,9 +39,24 @@ public class MltDecoderTest {
 
   @Test
   public void decodeMlTileVectorized_Z5BingMapsTile() throws IOException {
-    // TODO: fix "5-16-9" and "5-15-10"
     var tileIds = List.of("5-16-11", "5-17-11", "5-17-10");
     testBingTilesVectorized(tileIds);
+  }
+
+  @Test
+  // Currently fails, need to add CONST vector type support
+  public void decodeMlTileVectorized_Z5BingMapsTileFails1() throws IOException {
+    var tileIds = List.of("5-16-9");
+    var exception = assertThrows(Exception.class, () -> testBingTilesVectorized(tileIds));
+    assertEquals("java.lang.IllegalArgumentException: VectorType not supported yet: CONST", exception.toString());
+  }
+
+  @Test
+  // Currently fails, need to root cause property decoding difference
+  public void decodeMlTileVectorized_Z5BingMapsTileFails2() throws IOException {
+    var tileIds = List.of("5-15-10");
+    var exception = assertThrows(org.opentest4j.AssertionFailedError.class, () -> testBingTilesVectorized(tileIds));
+    assertEquals("org.opentest4j.AssertionFailedError: expected: <(U.K.)> but was: <null>", exception.toString());
   }
 
   @Test
