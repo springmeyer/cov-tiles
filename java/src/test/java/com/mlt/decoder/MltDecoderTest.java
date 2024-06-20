@@ -19,7 +19,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Collectors;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
 @FunctionalInterface
@@ -179,11 +178,11 @@ public class MltDecoderTest {
 
   /** Decode tiles in an in-memory format optimized for sequential access */
   @Test
-  @Disabled
   // org.opentest4j.AssertionFailedError: expected: <san pauro> but was: <null>
   public void decodeMlTile_Z2() throws IOException {
     var tileId = String.format("%s_%s_%s", 2, 2, 2);
-    testTileSequential(tileId, TestSettings.OMT_MVT_PATH);
+    var exception = assertThrows(org.opentest4j.AssertionFailedError.class, () -> testTileSequential(tileId, TestSettings.OMT_MVT_PATH));
+    assertEquals("org.opentest4j.AssertionFailedError: expected: <san pauro> but was: <null>", exception.toString());
   }
 
   @Test
