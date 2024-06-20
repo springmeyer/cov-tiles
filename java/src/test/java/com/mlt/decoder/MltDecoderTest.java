@@ -209,9 +209,6 @@ public class MltDecoderTest {
   }
 
   @Test
-  @Disabled
-  // java.lang.IllegalArgumentException: Invalid number of points in LineString (found 1 - must be 0
-  // or >= 2)
   public void decodeMlTile_Z14() throws IOException {
     var tileId = String.format("%s_%s_%s", 14, 8298, 10748);
     testTileSequential(tileId, TestSettings.OMT_MVT_PATH);
