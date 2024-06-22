@@ -9,13 +9,13 @@ import { execSync } from "child_process";
 
 const tiles = [
   'bing/4-8-5',
-  'bing/4-12-6',
-  'bing/4-13-6',
-  'bing/5-15-10',
-  'bing/5-16-11',
-  'bing/5-16-9',
-  'bing/5-17-10',
-  'bing/5-17-11',
+  // 'bing/4-12-6',
+  // 'bing/4-13-6',
+  // 'bing/5-15-10',
+  // 'bing/5-16-11',
+  // 'bing/5-16-9',
+  // 'bing/5-17-10',
+  // 'bing/5-17-11',
 ];
 
 if (!existsSync('../java/build/libs/encode.jar')) {
@@ -31,22 +31,21 @@ tiles.forEach(tile => {
   }
 });
 
-let maxTime = 10;
+let maxTime = 4;
 if (process.env.GITHUB_RUN_ID) {
   maxTime = 2;
   console.log(`Running in CI, using smaller maxTime: ${maxTime} seconds`);
 }
 
 const runSuite = async (tile) => {
-  console.log(`Running benchmarks for ${tile}`);
   const metadata: Buffer = readFileSync(`../test/expected/${tile}.mlt.meta.pbf`);
   const mvtTile: Buffer = readFileSync(`../test/fixtures/${tile}.mvt`);
   const mltTile: Buffer = readFileSync(`../test/expected/${tile}.mlt`);
   const uri = tile.split('/')[1].split('-').map(Number);
   const { z, x, y } = { z: uri[0], x: uri[1], y: uri[2] };
   const tilesetMetadata = TileSetMetadata.fromBinary(metadata);
-
   return new Promise((resolve) => {
+      console.log(`Running benchmarks for ${tile}`);
       const suite = new benchmark.Suite;
       suite
           .on('cycle', function(event: Event) {
@@ -61,10 +60,9 @@ const runSuite = async (tile) => {
               maxTime: maxTime,
               fn: (deferred: benchmark.Deferred) => {
                 const decoded = MltDecoder.decodeMlTile(mltTile, tilesetMetadata);
-                const features = [];
                 for (const layer of decoded.layers) {
                   for (const feature of layer.features) {
-                    features.push(feature.toGeoJSON(z, y, z));
+                    feature.loadGeometry();
                   }
                 }
                 deferred.resolve();
@@ -75,13 +73,12 @@ const runSuite = async (tile) => {
             maxTime: maxTime,
             fn: (deferred: benchmark.Deferred) => {
                 const vectorTile = new VectorTile(new Protobuf(mvtTile));
-                const features = [];
                 const layers = Object.keys(vectorTile.layers);
                 for (const layerName of layers) {
                   const layer = vectorTile.layers[layerName];
                   for (let i = 0; i < layer.length; i++) {
                     const feature = layer.feature(i);
-                    features.push(feature.toGeoJSON(x, y, z));
+                    feature.loadGeometry();
                   }
                 }
                 deferred.resolve();
