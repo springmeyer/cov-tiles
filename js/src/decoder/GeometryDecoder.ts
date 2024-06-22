@@ -90,12 +90,12 @@ export class GeometryDecoder {
         const geometryOffsets = geometryColumn.numGeometries;
         const partOffsets = geometryColumn.numParts;
         const ringOffsets = geometryColumn.numRings;
-        const vertexOffsets = geometryColumn.vertexOffsets ? geometryColumn.vertexOffsets.map(i => i) : null;
+        const vertexOffsets = geometryColumn.vertexOffsets;
         if (geometryColumn.vertexList.length === 0) {
             console.log("Warning: Vertex list is empty, skipping geometry decoding.");
             return [];
         }
-        const vertexBuffer = geometryColumn.vertexList.map(i => i);
+        const vertexBuffer = geometryColumn.vertexList;
 
         const containsPolygon = geometryTypes.includes(
                 GeometryType.POLYGON) || geometryTypes.includes(GeometryType.MULTIPOLYGON);
