@@ -1,15 +1,6 @@
 import Point = require("@mapbox/point-geometry");
 import { Projection } from './Projection';
 
-export class Coordinate {
-    x: number;
-    y: number;
-    constructor(x: number, y: number) {
-        this.x = x;
-        this.y = y;
-    }
-}
-
 export class LineString {
     points : Point[];
     constructor(points: Point[]) {
@@ -158,8 +149,8 @@ export class MultiPolygon {
 }
 
 export class GeometryFactory {
-    createPoint(coordinate: Coordinate) {
-        return new Point(coordinate.x, coordinate.y);
+    createPoint(x: number, y: number) {
+        return new Point(x, y);
     }
     createMultiPoint(points: Point[]) {
         return new MultiPoint(points);

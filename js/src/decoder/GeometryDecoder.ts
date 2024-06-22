@@ -6,7 +6,7 @@ import { IntegerDecoder } from './IntegerDecoder';
 import { IntWrapper } from './IntWrapper';
 import { StreamMetadataDecoder } from '../metadata/stream/StreamMetadataDecoder';
 import { PhysicalLevelTechnique } from '../metadata/stream/PhysicalLevelTechnique';
-import { GeometryFactory, Coordinate, LineString, Polygon, LinearRing } from '../data/Geometry';
+import { GeometryFactory, LineString, Polygon, LinearRing } from '../data/Geometry';
 import Point = require("@mapbox/point-geometry");
 
 export enum GeometryType {
@@ -105,14 +105,12 @@ export class GeometryDecoder {
                 if (!vertexOffsets || vertexOffsets.length === 0) {
                     const x = vertexBuffer[vertexBufferOffset++];
                     const y = vertexBuffer[vertexBufferOffset++];
-                    const coordinate = new Coordinate(x, y);
-                    geometries[geometryCounter++] = geometryFactory.createPoint(coordinate);
+                    geometries[geometryCounter++] = geometryFactory.createPoint(x, y);
                 } else {
                     const offset = vertexOffsets[vertexOffsetsOffset++] * 2;
                     const x = vertexBuffer[offset];
                     const y = vertexBuffer[offset + 1];
-                    const coordinate = new Coordinate(x, y);
-                    geometries[geometryCounter++] = geometryFactory.createPoint(coordinate);
+                    geometries[geometryCounter++] = geometryFactory.createPoint(x, y);
                 }
             } else if (geometryType === GeometryType.MULTIPOINT) {
                 const numPoints = geometryOffsets[geometryOffsetsCounter++];
@@ -121,8 +119,7 @@ export class GeometryDecoder {
                     for (let i = 0; i < numPoints; i++) {
                         const x = vertexBuffer[vertexBufferOffset++];
                         const y = vertexBuffer[vertexBufferOffset++];
-                        const coordinate = new Coordinate(x, y);
-                        points[i] = geometryFactory.createPoint(coordinate);
+                        points[i] = geometryFactory.createPoint(x, y);
                     }
                     geometries[geometryCounter++] = geometryFactory.createMultiPoint(points);
                 } else {
@@ -130,8 +127,7 @@ export class GeometryDecoder {
                         const offset = vertexOffsets[vertexOffsetsOffset++] * 2;
                         const x = vertexBuffer[offset];
                         const y = vertexBuffer[offset + 1];
-                        const coordinate = new Coordinate(x, y);
-                        points[i] = geometryFactory.createPoint(coordinate);
+                        points[i] = geometryFactory.createPoint(x, y);
                     }
                     geometries[geometryCounter++] = geometryFactory.createMultiPoint(points);
                 }
@@ -245,12 +241,12 @@ export class GeometryDecoder {
         return geometryFactory.createLinearRing(linearRing);
     }
 
-    private static getLineString(vertexBuffer: number[], startIndex: number, numVertices: number, closeLineString: boolean): Coordinate[] {
-        const vertices: Coordinate[] = new Array(closeLineString ? numVertices + 1 : numVertices);
+    private static getLineString(vertexBuffer: number[], startIndex: number, numVertices: number, closeLineString: boolean): Point[] {
+        const vertices: Point[] = new Array(closeLineString ? numVertices + 1 : numVertices);
         for (let i = 0; i < numVertices * 2; i += 2) {
             const x = vertexBuffer[startIndex + i];
             const y = vertexBuffer[startIndex + i + 1];
-            vertices[i / 2] = new Coordinate(x, y);
+            vertices[i / 2] = new Point(x, y);
         }
 
         if (closeLineString) {
@@ -259,13 +255,13 @@ export class GeometryDecoder {
         return vertices;
     }
 
-    private static decodeDictionaryEncodedLineString(vertexBuffer: number[], vertexOffsets: number[], vertexOffset: number, numVertices: number, closeLineString: boolean): Coordinate[] {
-        const vertices: Coordinate[] = new Array(closeLineString ? numVertices + 1 : numVertices);
+    private static decodeDictionaryEncodedLineString(vertexBuffer: number[], vertexOffsets: number[], vertexOffset: number, numVertices: number, closeLineString: boolean): Point[] {
+        const vertices: Point[] = new Array(closeLineString ? numVertices + 1 : numVertices);
         for (let i = 0; i < numVertices * 2; i += 2) {
             const offset = vertexOffsets[vertexOffset + i / 2] * 2;
             const x = vertexBuffer[offset];
             const y = vertexBuffer[offset + 1];
-            vertices[i / 2] = new Coordinate(x, y);
+            vertices[i / 2] = new Point(x, y);
         }
 
         if (closeLineString) {
