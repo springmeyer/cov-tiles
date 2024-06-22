@@ -170,12 +170,12 @@ class IntegerDecoder {
     }
 
     private static decodeZigZagDelta(data: number[]): number[] {
-        const values: number[] = [];
+        const values = new Array<number>(data.length).fill(0);
         let previousValue = 0;
+        let counter = 0;
         for (const zigZagDelta of data) {
-            const delta = DecodingUtils.decodeZigZag(zigZagDelta);
-            const value = previousValue + delta;
-            values.push(value);
+            const value = previousValue + DecodingUtils.decodeZigZag(zigZagDelta);;
+            values[counter++] = value;
             previousValue = value;
         }
         return values;
@@ -193,12 +193,12 @@ class IntegerDecoder {
     }
 
     private static decodeLongZigZagDelta(data: bigint[]): bigint[] {
-        const values: bigint[] = [];
-        let previousValue = BigInt(0);
+        const values = new Array<bigint>(data.length).fill(0n);
+        let previousValue = 0n;
+        let counter = 0;
         for (const zigZagDelta of data) {
-            const delta = DecodingUtils.decodeZigZagLong(zigZagDelta);
-            const value = previousValue + delta;
-            values.push(value);
+            const value = previousValue + DecodingUtils.decodeZigZagLong(zigZagDelta);
+            values[counter++] = value;
             previousValue = value;
         }
         return values;
