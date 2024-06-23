@@ -24,22 +24,26 @@ class IntegerDecoder {
     }
 
     private static decodeMortonDelta(data: number[], numBits: number, coordinateShift: number): number[] {
-        const vertices: number[] = [];
+        const vertices = new Array(data.length * 2);
         let previousMortonCode = 0;
+        let counter = 0;
         for (const deltaCode of data) {
             const mortonCode = previousMortonCode + deltaCode;
             const vertex = this.decodeMortonCode(mortonCode, numBits, coordinateShift);
-            vertices.push(vertex[0], vertex[1]);
+            vertices[counter++] = vertex[0];
+            vertices[counter++] = vertex[1];
             previousMortonCode = mortonCode;
         }
         return vertices;
     }
 
     private static decodeMortonCodes(data: number[], numBits: number, coordinateShift: number): number[] {
-        const vertices: number[] = [];
+        const vertices = new Array(data.length * 2);
+        let counter = 0;
         for (const mortonCode of data) {
             const vertex = this.decodeMortonCode(mortonCode, numBits, coordinateShift);
-            vertices.push(vertex[0], vertex[1]);
+            vertices[counter++] = vertex[0];
+            vertices[counter++] = vertex[1];
         }
         return vertices;
     }
