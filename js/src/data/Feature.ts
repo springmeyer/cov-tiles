@@ -1,11 +1,11 @@
 import { Projection } from './Projection';
 
 export class Feature {
-    id: number;
+    id: number | bigint;
     extent: number;
     geometry;
     properties;
-    constructor(id: number, extent: number, geometry, properties) {
+    constructor(id: number | bigint, extent: number, geometry, properties) {
         this.id = id;
         this.geometry = geometry;
         this.properties = properties;

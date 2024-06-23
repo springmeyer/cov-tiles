@@ -29,7 +29,7 @@ export class GeometryDecoder {
         let numParts = null;
         let numRings = null;
         let vertexOffsets = null;
-        let vertexList = [];
+        let vertexList = null;
         for(let i = 0; i < numStreams - 1; i++) {
             const geometryStreamMetadata = StreamMetadataDecoder.decode(tile, offset);
             const physicalStreamType = geometryStreamMetadata.physicalStreamType();
@@ -76,7 +76,7 @@ export class GeometryDecoder {
         return new GeometryColumn( geometryTypes, numGeometries, numParts, numRings, vertexOffsets, vertexList );
     }
 
-    static decodeGeometry(geometryColumn: GeometryColumn) {
+    static decodeGeometry(geometryColumn: GeometryColumn){
         const geometries = new Array(geometryColumn.geometryTypes.length);
         let partOffsetCounter = 0;
         let ringOffsetsCounter = 0;
@@ -231,17 +231,17 @@ export class GeometryDecoder {
         return geometries;
     }
 
-    private static getLinearRing(vertexBuffer: number[], startIndex: number, numVertices: number, geometryFactory: GeometryFactory): LinearRing {
+    private static getLinearRing(vertexBuffer: Int32Array, startIndex: number, numVertices: number, geometryFactory: GeometryFactory): LinearRing {
         const linearRing = this.getLineString(vertexBuffer, startIndex, numVertices, true);
         return geometryFactory.createLinearRing(linearRing);
     }
 
-    private static decodeDictionaryEncodedLinearRing(vertexBuffer: number[], vertexOffsets: number[], vertexOffset: number, numVertices: number, geometryFactory: GeometryFactory): LinearRing {
+    private static decodeDictionaryEncodedLinearRing(vertexBuffer: Int32Array, vertexOffsets: Int32Array, vertexOffset: number, numVertices: number, geometryFactory: GeometryFactory): LinearRing {
         const linearRing = this.decodeDictionaryEncodedLineString(vertexBuffer, vertexOffsets, vertexOffset, numVertices, true);
         return geometryFactory.createLinearRing(linearRing);
     }
 
-    private static getLineString(vertexBuffer: number[], startIndex: number, numVertices: number, closeLineString: boolean): Point[] {
+    private static getLineString(vertexBuffer: Int32Array, startIndex: number, numVertices: number, closeLineString: boolean): Point[] {
         const vertices: Point[] = new Array(closeLineString ? numVertices + 1 : numVertices);
         for (let i = 0; i < numVertices * 2; i += 2) {
             const x = vertexBuffer[startIndex + i];
@@ -255,7 +255,7 @@ export class GeometryDecoder {
         return vertices;
     }
 
-    private static decodeDictionaryEncodedLineString(vertexBuffer: number[], vertexOffsets: number[], vertexOffset: number, numVertices: number, closeLineString: boolean): Point[] {
+    private static decodeDictionaryEncodedLineString(vertexBuffer: Int32Array, vertexOffsets: Int32Array, vertexOffset: number, numVertices: number, closeLineString: boolean): Point[] {
         const vertices: Point[] = new Array(closeLineString ? numVertices + 1 : numVertices);
         for (let i = 0; i < numVertices * 2; i += 2) {
             const offset = vertexOffsets[vertexOffset + i / 2] * 2;
@@ -275,13 +275,13 @@ export class GeometryDecoder {
 
 
 export class GeometryColumn {
-    geometryTypes: number[];
-    numGeometries: number[];
-    numParts: number[];
-    numRings: number[];
-    vertexOffsets: number[];
-    vertexList: number[];
-    constructor(geometryTypes: number[], numGeometries: number[], numParts: number[], numRings: number[], vertexOffsets: number[], vertexList: number[]) {
+    geometryTypes: Int32Array;
+    numGeometries: Int32Array;
+    numParts: Int32Array;
+    numRings: Int32Array;
+    vertexOffsets: Int32Array;
+    vertexList: Int32Array;
+    constructor(geometryTypes: Int32Array, numGeometries: Int32Array, numParts: Int32Array, numRings: Int32Array, vertexOffsets: Int32Array, vertexList: Int32Array) {
         this.geometryTypes = geometryTypes;
         this.numGeometries = numGeometries;
         this.numParts = numParts;

@@ -3,7 +3,7 @@ import { BitSet } from 'bitset';
 
 export class DecodingUtils {
 
-    public static decodeComponentwiseDeltaVec2(data: number[]): void {
+    public static decodeComponentwiseDeltaVec2(data: Int32Array): void {
         data[0] = (data[0] >>> 1) ^ ((data[0] << 31) >> 31);
         data[1] = (data[1] >>> 1) ^ ((data[1] << 31) >> 31);
         for (let i = 2; i < data.length; i += 2) {
@@ -11,8 +11,8 @@ export class DecodingUtils {
             data[i + 1] = ((data[i + 1] >>> 1) ^ ((data[i + 1] << 31) >> 31)) + data[i - 1];
         }
     }
-    public static decodeVarint(src: Uint8Array, pos: IntWrapper, numValues: number): number[] {
-        const values = new Array(numValues).fill(0);
+    public static decodeVarint(src: Uint8Array, pos: IntWrapper, numValues: number): Int32Array {
+        const values = new Int32Array(numValues);
         let dstOffset = 0;
         for (let i = 0; i < numValues; i++) {
             const offset = this.decodeVarintInternal(src, pos.get(), values, dstOffset);
@@ -23,7 +23,7 @@ export class DecodingUtils {
     }
 
     // Source: https://github.com/bazelbuild/bazel/blob/master/src/main/java/com/google/devtools/build/lib/util/VarInt.java
-    private static decodeVarintInternal(src: Uint8Array, offset: number, dst: number[], dstOffset: number): number {
+    private static decodeVarintInternal(src: Uint8Array, offset: number, dst: Int32Array, dstOffset: number): number {
         let b = src[offset++];
         let value = b & 0x7f;
         if ((b & 0x80) === 0) {
@@ -51,8 +51,8 @@ export class DecodingUtils {
         return offset;
     }
 
-    public static decodeLongVarint(src: Uint8Array, pos: IntWrapper, numValues: number): bigint[] {
-        const values = new Array(numValues).fill(0n);
+    public static decodeLongVarint(src: Uint8Array, pos: IntWrapper, numValues: number): BigInt64Array {
+        const values = new BigInt64Array(numValues);
         for (let i = 0; i < numValues; i++) {
             const value = this.decodeLongVarintInternal(src, pos);
             values[i] = value;
@@ -83,7 +83,7 @@ export class DecodingUtils {
         return (encoded >>> 1) ^ (-(encoded & 1));
     }
 
-    public static decodeZigZagArray(encoded: number[]): void {
+    public static decodeZigZagArray(encoded: Int32Array): void {
         for (let i = 0; i < encoded.length; i++) {
             encoded[i] = this.decodeZigZag(encoded[i]);
         }
@@ -93,7 +93,7 @@ export class DecodingUtils {
         return (encoded >> 1n) ^ (-(encoded & 1n));
     }
 
-    public static decodeZigZagLongArray(encoded: bigint[]): void {
+    public static decodeZigZagLongArray(encoded: BigInt64Array): void {
         for (let i = 0; i < encoded.length; i++) {
             encoded[i] = this.decodeZigZagLong(encoded[i]);
         }
@@ -124,8 +124,8 @@ export class DecodingUtils {
         return values;
     }
 
-    public static decodeUnsignedRLE(data: number[], numRuns: number, numTotalValues: number): number[] {
-        const values = new Array(numTotalValues);
+    public static decodeUnsignedRLE(data: Int32Array, numRuns: number, numTotalValues: number): Int32Array {
+        const values = new Int32Array(numTotalValues);
         let offset = 0;
         for (let i = 0; i < numRuns; i++) {
             const runLength = data[i];
@@ -136,8 +136,8 @@ export class DecodingUtils {
         return values;
     }
 
-    public static decodeUnsignedRLELong(data: bigint[], numRuns: number, numTotalValues: number): bigint[] {
-        const values = new Array(numTotalValues).fill(0n);
+    public static decodeUnsignedRLELong(data: BigInt64Array, numRuns: number, numTotalValues: number): BigInt64Array {
+        const values = new BigInt64Array(numTotalValues);
         let offset = 0;
         for (let i = 0; i < numRuns; i++) {
             const runLength = data[i];

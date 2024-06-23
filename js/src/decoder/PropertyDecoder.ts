@@ -28,77 +28,92 @@ class PropertyDecoder {
                 case ScalarType.BOOLEAN: {
                     const dataStreamMetadata = StreamMetadataDecoder.decode(data, offset);
                     const dataStream = DecodingUtils.decodeBooleanRle(data, dataStreamMetadata.numValues(), offset);
-                    const booleanValues: (boolean | null)[] = new Array(presentStreamMetadata.numValues());
+                    // TODO: two pass over presentStream in order to avoid overallocation?
+                    const values = new Array(presentStreamMetadata.numValues());
                     let counter = 0;
                     for (let i = 0; i < presentStreamMetadata.numValues(); i++) {
-                        const value = presentStream.get(i) ? dataStream.get(counter++) : null;
-                        booleanValues[i] = value !== null ? Boolean(value) : null;
+                        const value = presentStream.get(i) ? Boolean(dataStream.get(counter++)) : null;
+                        if (value !== null) {
+                            values[i] = value;
+                        }
                     }
-                    return booleanValues;
+                    return values;
                 }
                 case ScalarType.UINT_32: {
                     const dataStreamMetadata = StreamMetadataDecoder.decode(data, offset);
                     const dataStream = IntegerDecoder.decodeIntStream(data, offset, dataStreamMetadata, false);
-                    const values: (number | null)[] = new Array(presentStreamMetadata.numValues());
+                    const values = new Uint32Array(presentStreamMetadata.numValues());
                     let counter = 0;
                     for (let i = 0; i < presentStreamMetadata.numValues(); i++) {
                         const value = presentStream.get(i) ? dataStream[counter++] : null;
-                        values[i] = value;
+                        if (value !== null) {
+                            values[i] = value;
+                        }
                     }
                     return values;
                 }
                 case ScalarType.INT_32: {
                     const dataStreamMetadata = StreamMetadataDecoder.decode(data, offset);
                     const dataStream = IntegerDecoder.decodeIntStream(data, offset, dataStreamMetadata, true);
-                    const values: (number | null)[] = new Array(presentStreamMetadata.numValues());
+                    const values = new Int32Array(presentStreamMetadata.numValues());
                     let counter = 0;
                     for (let i = 0; i < presentStreamMetadata.numValues(); i++) {
                         const value = presentStream.get(i) ? dataStream[counter++] : null;
-                        values[i] = value;
+                        if (value !== null) {
+                            values[i] = value;
+                        }
                     }
                     return values;
                 }
                 case ScalarType.DOUBLE: {
                     const dataStreamMetadata = StreamMetadataDecoder.decode(data, offset);
                     const dataStream = DoubleDecoder.decodeDoubleStream(data, offset, dataStreamMetadata);
-                    const values: (number | null)[] = new Array(presentStreamMetadata.numValues());
+                    const values = new Float64Array(presentStreamMetadata.numValues());
                     let counter = 0;
                     for (let i = 0; i < presentStreamMetadata.numValues(); i++) {
                         const value = presentStream.get(i) ? dataStream[counter++] : null;
-                        values[i] = value;
+                        if (value !== null) {
+                            values[i] = value;
+                        }
                     }
                     return values;
                 }
                 case ScalarType.FLOAT: {
                     const dataStreamMetadata = StreamMetadataDecoder.decode(data, offset);
                     const dataStream = FloatDecoder.decodeFloatStream(data, offset, dataStreamMetadata);
-                    const values: (number | null)[] = new Array(presentStreamMetadata.numValues());
+                    const values = new Float32Array(presentStreamMetadata.numValues());
                     let counter = 0;
                     for (let i = 0; i < presentStreamMetadata.numValues(); i++) {
                         const value = presentStream.get(i) ? dataStream[counter++] : null;
-                        values[i] = value;
+                        if (value !== null) {
+                            values[i] = value;
+                        }
                     }
                     return values;
                 }
                 case ScalarType.UINT_64: {
                     const dataStreamMetadata = StreamMetadataDecoder.decode(data, offset);
                     const dataStream = IntegerDecoder.decodeLongStream(data, offset, dataStreamMetadata, false);
-                    const values: (bigint | null)[] = new Array(presentStreamMetadata.numValues());
+                    const values = new BigUint64Array(presentStreamMetadata.numValues());
                     let counter = 0;
                     for (let i = 0; i < presentStreamMetadata.numValues(); i++) {
                         const value = presentStream.get(i) ? dataStream[counter++] : null;
-                        values[i] = value;
+                        if (value !== null) {
+                            values[i] = value;
+                        }
                     }
                     return values;
                 }
                 case ScalarType.INT_64: {
                     const dataStreamMetadata = StreamMetadataDecoder.decode(data, offset);
                     const dataStream = IntegerDecoder.decodeLongStream(data, offset, dataStreamMetadata, true);
-                    const values: (bigint | null)[] = new Array(presentStreamMetadata.numValues());
+                    const values = new BigInt64Array(presentStreamMetadata.numValues());
                     let counter = 0;
                     for (let i = 0; i < presentStreamMetadata.numValues(); i++) {
                         const value = presentStream.get(i) ? dataStream[counter++] : null;
-                        values[i] = value;
+                        if (value !== null) {
+                            values[i] = value;
+                        }
                     }
                     return values;
                 }

@@ -17,12 +17,12 @@ export class StringDecoder {
     public static decode(
         data: Uint8Array, offset: IntWrapper, numStreams: number,
         presentStream: BitSet, numValues: number) {
-        let dictionaryLengthStream: number[] = null;
-        let offsetStream: number[] = null;
+        let dictionaryLengthStream: Int32Array = null;
+        let offsetStream: Int32Array = null;
         const dataStream: Uint8Array = null;
         let dictionaryStream: Uint8Array = null;
         /* eslint-disable @typescript-eslint/no-unused-vars */
-        let symbolLengthStream: number[] = null;
+        let symbolLengthStream: Int32Array = null;
         let symbolTableStream: Uint8Array = null;
 
         for (let i = 0; i < numStreams; i++) {
@@ -66,7 +66,8 @@ export class StringDecoder {
         }
     }
 
-    private static decodePlain(presentStream: BitSet, lengthStream: number[], utf8Values: Uint8Array, numValues: number): string[] {
+    private static decodePlain(presentStream: BitSet, lengthStream: Int32Array, utf8Values: Uint8Array, numValues: number): string[] {
+        // TODO: preallocate?
         const decodedValues: string[] = [];
         let lengthOffset = 0;
         let strOffset = 0;
@@ -74,20 +75,20 @@ export class StringDecoder {
             const present = presentStream.get(i);
             if (present) {
                 const length = lengthStream[lengthOffset++];
+                // TODO: defer decoding / store in Uint8Array?
                 const value = textDecoder.decode(utf8Values.slice(strOffset, strOffset + length));
                 decodedValues.push(value);
                 strOffset += length;
-            } else {
-                decodedValues.push(null);
             }
         }
         return decodedValues;
     }
 
     private static decodeDictionary(
-        presentStream: BitSet, lengthStream: number[], utf8Values: Uint8Array,
-        dictionaryOffsets: number[], numValues: number
+        presentStream: BitSet, lengthStream: Int32Array, utf8Values: Uint8Array,
+        dictionaryOffsets: Int32Array, numValues: number
     ): string[] {
+        // TODO: preallocate?
         const dictionary: string[] = [];
         let dictionaryOffset = 0;
         for (const length of lengthStream) {
@@ -96,6 +97,7 @@ export class StringDecoder {
             dictionaryOffset += length;
         }
 
+        // TODO: preallocate?
         const values: string[] = [];
         let offset = 0;
 
@@ -103,9 +105,7 @@ export class StringDecoder {
             const present = presentStream.get(i);
             if (present) {
                 const value = dictionary[dictionaryOffsets[offset++]];
-                values.push(value);
-            } else {
-                values.push(null);
+                values[i] = value;
             }
         }
 

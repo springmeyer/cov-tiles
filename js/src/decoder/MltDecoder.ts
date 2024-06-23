@@ -15,8 +15,8 @@ export class MltDecoder {
         const offset = new IntWrapper(0);
         const mltLayers: Layer[] = [];
         while (offset.get() < tile.length) {
-            let ids = [];
-            let geometries = [];
+            let ids : BigInt64Array | Int32Array;
+            let geometries;
             const properties = {};
 
             offset.increment();
@@ -70,7 +70,7 @@ export class MltDecoder {
         return new MapLibreTile(mltLayers);
     }
 
-    private static convertToLayer(ids: number[], extent, version, geometries, properties, metadata: FeatureTableSchema, numFeatures: number): Layer {
+    private static convertToLayer(ids: BigInt64Array | Int32Array, extent, version, geometries, properties, metadata: FeatureTableSchema, numFeatures: number): Layer {
         const features: Feature[] = new Array(numFeatures);
         const vals = Object.entries(properties);
         for (let j = 0; j < numFeatures; j++) {
