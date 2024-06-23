@@ -63,9 +63,9 @@ export class Polygon {
         const projection = new Projection(extent, x, y, z);
         if (this.rings.length) {
             const rings = [projection.project(this.shell.points)];
-            this.rings.forEach(ring => {
+            for (const ring of this.rings) {
                 rings.push(projection.project(ring.points));
-            });
+            };
             return {
                 "type": "Polygon",
                 "coordinates": rings
@@ -79,9 +79,9 @@ export class Polygon {
     public loadGeometry = () => {
         if (this.rings.length) {
             const rings = [this.shell.points];
-            this.rings.forEach(ring => {
+            for (const ring of this.rings) {
                 rings.push(ring.points);
-            });
+            };
             return rings;
         }
         return this.shell.loadGeometry();
@@ -124,9 +124,9 @@ export class MultiPolygon {
         for (const polygon of this.polygons) {
             const poly = [projection.project(polygon.shell.points)];
             if (polygon.rings.length) {
-                polygon.rings.forEach(ring => {
+                for (const ring of polygon.rings) {
                     poly.push(projection.project(ring.points));
-                });
+                };
             }
             polygons.push(poly);
         }
@@ -140,9 +140,9 @@ export class MultiPolygon {
         const polygons = [];
         for (const polygon of this.polygons) {
             polygons.push(polygon.shell.points);
-            polygon.rings.forEach(ring => {
+            for (const ring of polygon.rings) {
                 polygons.push(ring.points);
-            });
+            };
         }
         return polygons;
     }
