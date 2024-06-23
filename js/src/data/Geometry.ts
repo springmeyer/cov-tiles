@@ -31,7 +31,11 @@ export class MultiPoint {
         };
     }
     public loadGeometry = () => {
-        return this.points.map(p => [p]);
+        const p = new Array(this.points.length);
+        for (let i = 0; i < this.points.length; i++) {
+            p[i] = [this.points[i]];
+        }
+        return p;
     }
 }
 
