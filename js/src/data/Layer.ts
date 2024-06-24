@@ -17,3 +17,4 @@ export class Layer {
         if (i < 0 || i >= this.features.length) throw new Error('feature index out of bounds');
         return this.features[i];
     }
+}
