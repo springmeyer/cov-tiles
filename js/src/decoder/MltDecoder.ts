@@ -84,29 +84,9 @@ export class MltDecoder {
                     }
                 }
             }
-            mltile.layers[metadata.name] = MltDecoder.convertToLayer(ids, extent, version, geometries, properties, metadata.name, numFeatures);
+            mltile.layers[metadata.name] = new Layer(metadata.name, version, extent, ids, geometries, properties, numFeatures);
         }
 
         return mltile;
-    }
-
-    private static convertToLayer(ids: BigInt64Array | Int32Array, extent, version, geometries, properties, name : string, numFeatures: number): Layer {
-        const features: Feature[] = new Array(numFeatures);
-        const vals = Object.entries(properties);
-        for (let j = 0; j < numFeatures; j++) {
-            /* eslint-disable @typescript-eslint/no-explicit-any */
-            const p: { [key: string]: any } = {};
-            for (const [key, value] of vals) {
-                if (value) {
-                    const val = value[j];
-                    if (val) {
-                        p[key] = val;
-                    }
-                }
-            }
-            features[j] = new Feature(ids[j], extent, geometries[j], p)
-        }
-
-        return new Layer(name, version, features);
     }
 }
