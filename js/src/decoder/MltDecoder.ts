@@ -2,7 +2,7 @@ import { Feature } from '../data/Feature';
 import { Layer } from '../data/Layer';
 import { MapLibreTile } from '../data/MapLibreTile';
 import { StreamMetadataDecoder } from '../metadata/stream/StreamMetadataDecoder';
-import { FeatureTableSchema, TileSetMetadata } from "../metadata/mlt_tileset_metadata_pb";
+import { TileSetMetadata } from "../metadata/mlt_tileset_metadata_pb";
 import { IntWrapper } from './IntWrapper';
 import { DecodingUtils } from './DecodingUtils';
 import { IntegerDecoder } from './IntegerDecoder';
@@ -11,7 +11,29 @@ import { PropertyDecoder } from './PropertyDecoder';
 import { ScalarType } from "../metadata/mlt_tileset_metadata_pb";
 
 export class MltDecoder {
-    public static decodeMlTile(tile: Uint8Array, tileMetadata: TileSetMetadata): MapLibreTile {
+    public static getTableMeta(tilesetMetadata: TileSetMetadata) {
+        const tableMeta = [];
+        for (let i=0; i < tilesetMetadata.featureTables.length; i++) {
+            const featureTable = tilesetMetadata.featureTables[i];
+            const types = [];
+            for (const column of featureTable.columns) {
+                const scalarColumn = column.type.value;
+                if (scalarColumn !== undefined) {
+                    types.push({
+                        "name": String(column.name),
+                        "type": Number(column.type.value.type.value)
+                        });
+                }
+            }
+            tableMeta[i] = {
+                columns: types,
+                name: featureTable.name
+            };
+        }
+        return tableMeta;
+    }
+
+    public static decodeMlTile(tile: Uint8Array, tableMeta: any): MapLibreTile {
         const offset = new IntWrapper(0);
         const mltile = new MapLibreTile();
         while (offset.get() < tile.length) {
@@ -25,10 +47,10 @@ export class MltDecoder {
             const extent = infos[1];
             const featureTableId = infos[0];
             const numFeatures = infos[3];
-            const metadata = tileMetadata.featureTables[featureTableId];
+            const metadata = tableMeta[featureTableId];
             if (!metadata) {
                 console.log(`could not find metadata for feature table id: ${featureTableId}`);
-                return;
+                mltile;
             }
             for (const columnMetadata of metadata.columns) {
                 const columnName = columnMetadata.name;
@@ -42,7 +64,7 @@ export class MltDecoder {
                         throw new Error("Unsupported number of streams for ID column: " + numStreams);
                     }
                     const idDataStreamMetadata = StreamMetadataDecoder.decode(tile, offset);
-                    const physicalType = columnMetadata.type.value.type.value;
+                    const physicalType = columnMetadata.type;
                     if (physicalType === ScalarType.UINT_32) {
                         ids = IntegerDecoder.decodeIntStream(tile, offset, idDataStreamMetadata, false);
                     } else if (physicalType === ScalarType.UINT_64){
@@ -54,7 +76,7 @@ export class MltDecoder {
                     const geometryColumn = GeometryDecoder.decodeGeometryColumn(tile, numStreams, offset);
                     geometries = GeometryDecoder.decodeGeometry(geometryColumn);
                 } else {
-                    const propertyColumn = PropertyDecoder.decodePropertyColumn(tile, offset, columnMetadata, numStreams);
+                    const propertyColumn = PropertyDecoder.decodePropertyColumn(tile, offset, columnMetadata.type, numStreams);
                     if (propertyColumn instanceof Map) {
                         throw new Error("Nested properties are not implemented yet");
                     } else {
@@ -62,13 +84,13 @@ export class MltDecoder {
                     }
                 }
             }
-            mltile.layers[metadata.name] = MltDecoder.convertToLayer(ids, extent, version, geometries, properties, metadata, numFeatures);
+            mltile.layers[metadata.name] = MltDecoder.convertToLayer(ids, extent, version, geometries, properties, metadata.name, numFeatures);
         }
 
         return mltile;
     }
 
-    private static convertToLayer(ids: BigInt64Array | Int32Array, extent, version, geometries, properties, metadata: FeatureTableSchema, numFeatures: number): Layer {
+    private static convertToLayer(ids: BigInt64Array | Int32Array, extent, version, geometries, properties, name : string, numFeatures: number): Layer {
         const features: Feature[] = new Array(numFeatures);
         const vals = Object.entries(properties);
         for (let j = 0; j < numFeatures; j++) {
@@ -85,6 +107,6 @@ export class MltDecoder {
             features[j] = new Feature(ids[j], extent, geometries[j], p)
         }
 
-        return new Layer(metadata.name, version, features);
+        return new Layer(name, version, features);
     }
 }

@@ -225,7 +225,9 @@ function getTiles(pathname: string) {
             const mltPath = Path.join(expectedDir, fixtureDirname, mvtFilename.replace(/\.(pbf|mvt)$/,'.mlt'));
             const mltMetaPath = mltPath.replace('.advanced','') + '.meta.pbf';
             const meta = fs.readFileSync(mltMetaPath);
-            const mlt = MltDecoder.decodeMlTile(fs.readFileSync(mltPath), TileSetMetadata.fromBinary(meta));
+            const tilesetMetadata = TileSetMetadata.fromBinary(meta);
+            const tableMeta = MltDecoder.getTableMeta(tilesetMetadata);
+            const mlt = MltDecoder.decodeMlTile(fs.readFileSync(mltPath), tableMeta);
             const mvt = new VectorTile(new Protobuf(fs.readFileSync(mvtPath)));
             return { mlt, mvt };
         })

@@ -62,12 +62,13 @@ const load = (tile : String) => {
   const uri = tile.split('/')[1].split('-').map(Number);
   const { z, x, y } = { z: uri[0], x: uri[1], y: uri[2] };
   const tilesetMetadata = TileSetMetadata.fromBinary(metadata);
-  return { tile, x, y, z, mltTile, mvtTile, tilesetMetadata };
+  const tableMeta = MltDecoder.getTableMeta(tilesetMetadata);
+  return { tile, x, y, z, mltTile, mvtTile, tableMeta };
 }
 
 const validate = async (input : any) => {
   return new Promise((resolve) => {
-    const decoded = MltDecoder.decodeMlTile(input.mltTile, input.tilesetMetadata);
+    const decoded = MltDecoder.decodeMlTile(input.mltTile, input.tableMeta);
     const mvtDecoded = new VectorTile(new Protobuf(input.mvtTile));
     const layerNames = Object.keys(decoded.layers).sort();
     let count = 0;
@@ -152,7 +153,7 @@ const runSuite = async (input: any) => {
             defer: true,
             maxTime: maxTime,
             fn: (deferred: benchmark.Deferred) => {
-                const decoded = MltDecoder.decodeMlTile(input.mltTile, input.tilesetMetadata);
+                const decoded = MltDecoder.decodeMlTile(input.mltTile, input.tableMeta);
                 let count = 0;
                 const layerNames = Object.keys(decoded.layers).sort();
                 for (const layerName of layerNames) {
@@ -220,7 +221,7 @@ const runSuite = async (input: any) => {
               defer: true,
               maxTime: maxTime,
               fn: (deferred: benchmark.Deferred) => {
-                  const decoded = MltDecoder.decodeMlTile(input.mltTile, input.tilesetMetadata);
+                  const decoded = MltDecoder.decodeMlTile(input.mltTile, input.tableMeta);
                   let count = 0;
                   const layerNames = Object.keys(decoded.layers).sort();
                   for (const layerName of layerNames) {
