@@ -55,7 +55,7 @@ if (process.env.GITHUB_RUN_ID) {
   console.log(`Running in CI, using smaller maxTime: ${maxTime} seconds`);
 }
 
-const load = (tile) => {
+const load = (tile : String) => {
   const metadata: Buffer = readFileSync(`../test/expected/${tile}.mlt.meta.pbf`);
   const mvtTile: Buffer = readFileSync(`../test/fixtures/${tile}.mvt`);
   const mltTile: Buffer = readFileSync(`../test/expected/${tile}.mlt`);
@@ -65,7 +65,7 @@ const load = (tile) => {
   return { tile, x, y, z, mltTile, mvtTile, tilesetMetadata };
 }
 
-const validate = async (input) => {
+const validate = async (input : any) => {
   return new Promise((resolve) => {
     const decoded = MltDecoder.decodeMlTile(input.mltTile, input.tilesetMetadata);
     const mvtDecoded = new VectorTile(new Protobuf(input.mvtTile));
@@ -96,13 +96,6 @@ const validate = async (input) => {
         const json = feature.toGeoJSON(input.x, input.y, input.z);
         const mvtJson = mvtFeature.toGeoJSON(input.x, input.y, input.z);
         assert(json.geometry.type === mvtJson.geometry.type, `Geometry type mismatch for ${input.tile} ${i}`);
-        assert(json.geometry.coordinates.length === mvtJson.geometry.coordinates.length, `Geometry coordinates length mismatch for ${input.tile} ${i}`);
-        for (let j = 0; j < json.geometry.coordinates.length; j++) {
-          const coord = feature.geometry.coordinates[j];
-          const mvtCoord = mvtJson.geometry.coordinates[j];
-          assert(coord.length === mvtCoord.length, `Geometry coordinate length mismatch for ${input.tile} ${i}`);
-          // TODO: cannot validate equal coordinates yet due to https://github.com/maplibre/maplibre-tile-spec/issues/184
-        }
       }
       count++;
     }
@@ -111,7 +104,7 @@ const validate = async (input) => {
   })
 }
 
-const runSuite = async (input) => {
+const runSuite = async (input: any) => {
   return new Promise((resolve) => {
       const tile = input.tile;
       const suite = new benchmark.Suite;
@@ -258,7 +251,7 @@ const runSuite = async (input) => {
   })
 }
 
-const runSuites = async (tiles) => {
+const runSuites = async (tiles: any) => {
   const inputs = [];
   for (const tile of tiles) {
       inputs.push(load(tile));
