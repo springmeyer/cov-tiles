@@ -23,17 +23,6 @@ public class StringFsstDictionaryVector extends VariableSizeVector<String> {
 
   public StringFsstDictionaryVector(
       String name,
-      IntBuffer indexBuffer,
-      IntBuffer lengthBuffer,
-      ByteBuffer dictionaryBuffer,
-      IntBuffer symbolLengthBuffer,
-      ByteBuffer symbolTableBuffer) {
-    super(name, lengthBuffer, dictionaryBuffer);
-    setBuffer(indexBuffer, symbolLengthBuffer, symbolTableBuffer);
-  }
-
-  public StringFsstDictionaryVector(
-      String name,
       BitVector nullabilityBuffer,
       IntBuffer indexBuffer,
       IntBuffer lengthBuffer,

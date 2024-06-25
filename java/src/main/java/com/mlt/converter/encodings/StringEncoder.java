@@ -106,8 +106,6 @@ public class StringEncoder {
      * -> based on statistics if dictionary encoding is used
      * -> compare four possible encodings in size based on samples
      * */
-    // TODO: add plain encoding agian
-    // var plainEncodedColumn = encodePlain(values, physicalLevelTechnique);
     var dictionaryEncodedColumn = encodeDictionary(values, physicalLevelTechnique, true, false);
     if (!useFsstEncoding) {
       return Pair.of(3, dictionaryEncodedColumn);
@@ -282,37 +280,5 @@ public class StringEncoder {
         encodedOffsetStream,
         encodedDictionaryStreamMetadata,
         dictionaryStream);
-  }
-
-  public static byte[] encodePlain(
-      List<String> values, PhysicalLevelTechnique physicalLevelTechnique) throws IOException {
-    var lengthStream = new ArrayList<Integer>(values.size());
-    var dataStream = new byte[0];
-    for (var value : values) {
-      var utf8EncodedValue = value.getBytes(StandardCharsets.UTF_8);
-      dataStream = CollectionUtils.concatByteArrays(dataStream, utf8EncodedValue);
-      lengthStream.add(utf8EncodedValue.length);
-    }
-
-    var encodedLengthStream =
-        IntegerEncoder.encodeIntStream(
-            lengthStream,
-            physicalLevelTechnique,
-            false,
-            PhysicalStreamType.LENGTH,
-            new LogicalStreamType(LengthType.VAR_BINARY));
-
-    var dataStreamMetadata =
-        new StreamMetadata(
-                PhysicalStreamType.DATA,
-                new LogicalStreamType(DictionaryType.NONE),
-                LogicalLevelTechnique.NONE,
-                LogicalLevelTechnique.NONE,
-                PhysicalLevelTechnique.NONE,
-                values.size(),
-                dataStream.length)
-            .encode();
-
-    return CollectionUtils.concatByteArrays(encodedLengthStream, dataStreamMetadata, dataStream);
   }
 }

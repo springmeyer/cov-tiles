@@ -274,13 +274,6 @@ public class EncodingUtils {
     @Override
     public void suppress() {}
 
-    public ByteBuffer getCurrentBuffer() {
-      while (currentBuffer < buffers.size() && buffers.get(currentBuffer).remaining() == 0) {
-        currentBuffer += 1;
-      }
-      return currentBuffer < buffers.size() ? buffers.get(currentBuffer) : null;
-    }
-
     public byte[] getBuffer() throws IOException {
       ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
       for (var buffer : this.buffers) {
@@ -289,12 +282,5 @@ public class EncodingUtils {
       return outputStream.toByteArray();
     }
 
-    public int getBufferSize() {
-      var size = 0;
-      for (var buffer : buffers) {
-        size += buffer.array().length;
-      }
-      return size;
-    }
   }
 }
