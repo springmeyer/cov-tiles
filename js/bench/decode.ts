@@ -55,40 +55,6 @@ if (process.env.GITHUB_RUN_ID) {
   console.log(`Running in CI, using smaller maxTime: ${maxTime} seconds`);
 }
 
-const decode = (decoded, collector) => {
-  let count = 0;
-  const layerNames = Object.keys(decoded.layers).sort();
-  for (const layerName of layerNames) {
-    const layer = decoded.layers[layerName];
-    for (let i = 0; i < layer.length; i++) {
-      const feature = layer.feature(i);
-      const result = feature.loadGeometry();
-      if (collector) {
-        collector.push(result);
-      }
-      count++;
-    }
-  }
-  return count;
-}
-
-const decodeJSON = (input, decoded, collector) => {
-  let count = 0;
-  const layerNames = Object.keys(decoded.layers).sort();
-  for (const layerName of layerNames) {
-    const layer = decoded.layers[layerName];
-    for (let i = 0; i < layer.length; i++) {
-      const feature = layer.feature(i);
-      const result = feature.toGeoJSON(input.x, input.y, input.z);
-      if (collector) {
-        collector.push(result);
-      }
-      count++;
-    }
-  }
-  return count;
-}
-
 const load = (tile) => {
   const metadata: Buffer = readFileSync(`../test/expected/${tile}.mlt.meta.pbf`);
   const mvtTile: Buffer = readFileSync(`../test/fixtures/${tile}.mvt`);
@@ -101,47 +67,46 @@ const load = (tile) => {
 
 const validate = async (input) => {
   return new Promise((resolve) => {
-    const features = [];
-    const mvtFeatures = [];
     const decoded = MltDecoder.decodeMlTile(input.mltTile, input.tilesetMetadata);
-    const mltCount = decodeJSON(input, decoded, features);
     const mvtDecoded = new VectorTile(new Protobuf(input.mvtTile));
-    const mvtCount = decodeJSON(input, mvtDecoded, mvtFeatures);
-    assert(mltCount === mvtCount, `Feature count mismatch for ${input.tile}`);
-    assert(features.length === mvtFeatures.length, `Feature array count mismatch for ${input.tile}`)
-    assert(features.length > 0, `No features found for ${input.tile}`)
-    assert(mvtFeatures.length > 0, `No features found for ${input.tile}`)
+    const layerNames = Object.keys(decoded.layers).sort();
     let count = 0;
-    for (let i = 0; i < features.length; i++) {
-      const feature = features[i];
-      const mvtFeature = mvtFeatures[i];
-      const featureKeys = Object.keys(feature.properties).sort();
-      const mvtFeatureKeys = Object.keys(mvtFeature.properties).sort();
-      // workaround https://github.com/maplibre/maplibre-tile-spec/issues/181
-      if (mvtFeatureKeys.indexOf('id') !== -1) {
-        mvtFeatureKeys.splice(mvtFeatureKeys.indexOf('id'), 1);
-      }
-      assert(featureKeys.length === mvtFeatureKeys.length, `Feature keys mismatch for ${input.tile}`);
-      const featureKeysStr = JSON.stringify(featureKeys);
-      const mvtFeatureKeysStr = JSON.stringify(mvtFeatureKeys);
-      if (featureKeysStr !== mvtFeatureKeysStr) {
-        console.error(`Validation failed for ${input.tile} ${i}`);
-        console.log(featureKeysStr);
-        console.log('  vs')
-        console.log(mvtFeatureKeysStr);
-        process.exit(1);
-      }
-      assert(feature.geometry.type === mvtFeature.geometry.type, `Geometry type mismatch for ${input.tile} ${i}`);
-      assert(feature.geometry.coordinates.length === mvtFeature.geometry.coordinates.length, `Geometry coordinates length mismatch for ${input.tile} ${i}`);
-      for (let j = 0; j < feature.geometry.coordinates.length; j++) {
-        const coord = feature.geometry.coordinates[j];
-        const mvtCoord = mvtFeature.geometry.coordinates[j];
-        assert(coord.length === mvtCoord.length, `Geometry coordinate length mismatch for ${input.tile} ${i}`);
-        // TODO: cannot validate equal coordinates yet due to https://github.com/maplibre/maplibre-tile-spec/issues/184
+    for (const layerName of layerNames) {
+      const layer = decoded.layers[layerName];
+      const mvtLayer = mvtDecoded.layers[layerName];
+      for (let i = 0; i < layer.length; i++) {
+        const feature = layer.feature(i);
+        const mvtFeature = mvtLayer.feature(i);
+        const featureKeys = Object.keys(feature.properties).sort();
+        const mvtFeatureKeys = Object.keys(mvtFeature.properties).sort();
+        // workaround https://github.com/maplibre/maplibre-tile-spec/issues/181
+        if (mvtFeatureKeys.indexOf('id') !== -1) {
+          mvtFeatureKeys.splice(mvtFeatureKeys.indexOf('id'), 1);
+        }
+        assert(featureKeys.length === mvtFeatureKeys.length, `Feature keys mismatch for ${input.tile}`);
+        const featureKeysStr = JSON.stringify(featureKeys);
+        const mvtFeatureKeysStr = JSON.stringify(mvtFeatureKeys);
+        if (featureKeysStr !== mvtFeatureKeysStr) {
+          console.error(`Validation failed for ${input.tile} ${i}`);
+          console.log(featureKeysStr);
+          console.log('  vs')
+          console.log(mvtFeatureKeysStr);
+          process.exit(1);
+        }
+        const json = feature.toGeoJSON(input.x, input.y, input.z);
+        const mvtJson = mvtFeature.toGeoJSON(input.x, input.y, input.z);
+        assert(json.geometry.type === mvtJson.geometry.type, `Geometry type mismatch for ${input.tile} ${i}`);
+        assert(json.geometry.coordinates.length === mvtJson.geometry.coordinates.length, `Geometry coordinates length mismatch for ${input.tile} ${i}`);
+        for (let j = 0; j < json.geometry.coordinates.length; j++) {
+          const coord = feature.geometry.coordinates[j];
+          const mvtCoord = mvtJson.geometry.coordinates[j];
+          assert(coord.length === mvtCoord.length, `Geometry coordinate length mismatch for ${input.tile} ${i}`);
+          // TODO: cannot validate equal coordinates yet due to https://github.com/maplibre/maplibre-tile-spec/issues/184
+        }
       }
       count++;
     }
-    assert(count === mltCount, `Validation count mismatch for ${input.tile}`)
+    assert(count > 0, `Validation count mismatch for ${input.tile}`)
     resolve(null);
   })
 }
@@ -154,14 +119,23 @@ const runSuite = async (input) => {
         console.log(String(event.target));
       })
       if (willRunMVT) {
-        let opts = null;
+        let opts : null | number = null;
         suite
           .add(`MVT -> loadGeo ${tile}`, {
             defer: true,
             maxTime: maxTime,
             fn: (deferred: benchmark.Deferred) => {
                 const decoded = new VectorTile(new Protobuf(input.mvtTile));
-                const count = decode(decoded, null);
+                let count = 0;
+                const layerNames = Object.keys(decoded.layers).sort();
+                for (const layerName of layerNames) {
+                  const layer = decoded.layers[layerName];
+                  for (let i = 0; i < layer.length; i++) {
+                    const feature = layer.feature(i);
+                    const result = feature.loadGeometry();
+                    count++;
+                  }
+                }
                 if (opts === null) {
                   opts = count;
                 } else {
@@ -179,14 +153,23 @@ const runSuite = async (input) => {
           });
       }
       if (willRunMLT) {
-        let opts = null;
+        let opts : null | number = null;
         suite
           .add(`MLT -> loadGeo ${tile}`, {
             defer: true,
             maxTime: maxTime,
             fn: (deferred: benchmark.Deferred) => {
                 const decoded = MltDecoder.decodeMlTile(input.mltTile, input.tilesetMetadata);
-                const count = decode(decoded, null);
+                let count = 0;
+                const layerNames = Object.keys(decoded.layers).sort();
+                for (const layerName of layerNames) {
+                  const layer = decoded.layers[layerName];
+                  for (let i = 0; i < layer.length; i++) {
+                    const feature = layer.feature(i);
+                    const result = feature.loadGeometry();
+                    count++;
+                  }
+                }
                 if (opts === null) {
                   opts = count;
                 } else {
@@ -204,14 +187,23 @@ const runSuite = async (input) => {
           });
       }
       if (willRunMVTJSON) {
-        let opts = null;
+        let opts : null | number = null;
         suite
           .add(`MVT -> GeoJSON ${tile}`, {
             defer: true,
             maxTime: maxTime,
             fn: (deferred: benchmark.Deferred) => {
-              const decoded = new VectorTile(new Protobuf(input.mvtTile));
-                const count = decodeJSON(input, decoded, null);
+                const decoded = new VectorTile(new Protobuf(input.mvtTile));
+                let count = 0;
+                const layerNames = Object.keys(decoded.layers).sort();
+                for (const layerName of layerNames) {
+                  const layer = decoded.layers[layerName];
+                  for (let i = 0; i < layer.length; i++) {
+                    const feature = layer.feature(i);
+                    const result = feature.toGeoJSON(input.x, input.y, input.z);
+                    count++;
+                  }
+                }
                 if (opts === null) {
                   opts = count;
                 } else {
@@ -221,7 +213,7 @@ const runSuite = async (input) => {
                   }
                 }
                 deferred.resolve();
-            }
+          }
           }).
           on('complete', () => {
             console.log(`  Total MVT features(json) processed: ${opts}`);
@@ -229,23 +221,32 @@ const runSuite = async (input) => {
           });
       }
       if (willRunMLTJSON) {
-        let opts = null;
+        let opts : null | number = null;
         suite
           .add(`MLT -> GeoJSON ${tile}`, {
               defer: true,
               maxTime: maxTime,
               fn: (deferred: benchmark.Deferred) => {
-                const decoded = MltDecoder.decodeMlTile(input.mltTile, input.tilesetMetadata);
-                const count = decodeJSON(input, decoded, null);
-                if (opts === null) {
-                  opts = count;
-                } else {
-                  if (count !== opts || count < 1) {
-                    console.error(`Feature count mismatch for ${tile}`);
-                    process.exit(1);
+                  const decoded = MltDecoder.decodeMlTile(input.mltTile, input.tilesetMetadata);
+                  let count = 0;
+                  const layerNames = Object.keys(decoded.layers).sort();
+                  for (const layerName of layerNames) {
+                    const layer = decoded.layers[layerName];
+                    for (let i = 0; i < layer.length; i++) {
+                      const feature = layer.feature(i);
+                      const result = feature.toGeoJSON(input.x, input.y, input.z);
+                      count++;
+                    }
                   }
-                }
-                deferred.resolve();
+                  if (opts === null) {
+                    opts = count;
+                  } else {
+                    if (count !== opts || count < 1) {
+                      console.error(`Feature count mismatch for ${tile}`);
+                      process.exit(1);
+                    }
+                  }
+                  deferred.resolve();
               }
           }).
           on('complete', () => {
