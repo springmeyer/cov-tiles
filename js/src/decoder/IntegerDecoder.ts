@@ -149,31 +149,40 @@ class IntegerDecoder {
         // Note: if this array is initialied like new Array<number>(numRleValues)
         // like the java implementation does, the array will potentially contain
         // extra uninitialized values
-        // TODO: figure out how to pre-initialize the array with the correct size
-        const values = new Array<number>();
+        let size = 0;
+        for (let i = 0; i < numRuns; i++) {
+            size += data[i];
+        }
+        const values = new Int32Array(size);
+        let counter = 0;
         for (let i = 0; i < numRuns; i++) {
             const run = data[i];
             const value = data[i + numRuns];
             for (let j = 0; j < run; j++) {
-                values.push(value);
+                values[counter++] = value;
             }
         }
-        return new Int32Array(values);
+        return values;
     }
 
     private static decodeLongRLE(data: BigInt64Array, numRuns: number): BigInt64Array {
         // Note: if this array is initialied like new Array<number>(numRleValues)
         // like the java implementation does, the array will potentially contain
         // extra uninitialized values
-        const values = new Array<bigint>();
+        let size = 0n;
+        for (let i = 0; i < numRuns; i++) {
+            size += data[i];
+        }
+        const values = new BigInt64Array(Number(size))
+        let counter = 0;
         for (let i = 0; i < numRuns; i++) {
             const run = data[i];
             const value = data[i + numRuns];
             for (let j = 0; j < run; j++) {
-                values.push(value);
+                values[counter++] = value;
             }
         }
-        return new BigInt64Array(values);
+        return values;
     }
 
     private static decodeZigZagDelta(data): void {
