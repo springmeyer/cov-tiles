@@ -13,7 +13,7 @@ export class Feature {
     }
 
     public loadGeometry = () => {
-        if (typeof this.geometry.loadGeometry === 'function') {
+        if (this.geometry.loadGeometry) {
             return this.geometry.loadGeometry();
         } else {
             return [[this.geometry]];
