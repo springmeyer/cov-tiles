@@ -3,8 +3,6 @@ import { StreamMetadataDecoder } from '../metadata/stream/StreamMetadataDecoder'
 import { IntegerDecoder } from './IntegerDecoder';
 import { BitSet } from 'bitset';
 
-const textDecoder = new TextDecoder("utf-8");
-
 export class StringDecoder {
 
     /*
@@ -71,6 +69,7 @@ export class StringDecoder {
         const decodedValues: string[] = [];
         let lengthOffset = 0;
         let strOffset = 0;
+        const textDecoder = new TextDecoder("utf-8");
         for (let i = 0; i < numValues; i++) {
             const present = presentStream.get(i);
             if (present) {
@@ -91,6 +90,7 @@ export class StringDecoder {
         // TODO: preallocate?
         const dictionary: string[] = [];
         let dictionaryOffset = 0;
+        const textDecoder = new TextDecoder("utf-8");
         for (const length of lengthStream) {
             const value = textDecoder.decode(utf8Values.slice(dictionaryOffset, dictionaryOffset + length));
             dictionary.push(value);
