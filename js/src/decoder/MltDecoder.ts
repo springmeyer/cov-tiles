@@ -33,7 +33,8 @@ export class MltDecoder {
         return tableMeta;
     }
 
-    public static decodeMlTile(tile: Uint8Array, tableMeta: any): MapLibreTile {
+    public static decodeMlTile(tile: Uint8Array, tilesetMetadata: TileSetMetadata): MapLibreTile {
+        const tableMeta = MltDecoder.getTableMeta(tilesetMetadata);
         const offset = new IntWrapper(0);
         const mltile = new MapLibreTile();
         while (offset.get() < tile.length) {
