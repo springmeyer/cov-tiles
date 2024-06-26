@@ -78,7 +78,7 @@ class IntegerDecoder {
             }
             case LogicalLevelTechnique.RLE: {
                 const rleMetadata = streamMetadata as RleEncodedStreamMetadata;
-                const decodedValues = this.decodeRLE(values, rleMetadata.runs());
+                const decodedValues = this.decodeRLE(values, rleMetadata.runs(), rleMetadata.numRleValues());
                 if (isSigned) {
                     this.decodeZigZag(decodedValues);
                 }
@@ -128,7 +128,7 @@ class IntegerDecoder {
             }
             case LogicalLevelTechnique.RLE: {
                 const rleMetadata = streamMetadata as RleEncodedStreamMetadata;
-                const decodedValues = this.decodeLongRLE(values, rleMetadata.runs());
+                const decodedValues = this.decodeLongRLE(values, rleMetadata.runs(), rleMetadata.numRleValues());
                 if (isSigned) {
                     this.decodeZigZagLong(decodedValues);
                 }
@@ -145,15 +145,8 @@ class IntegerDecoder {
         }
     }
 
-    private static decodeRLE(data: Int32Array, numRuns: number): Int32Array {
-        // Note: if this array is initialied like new Array<number>(numRleValues)
-        // like the java implementation does, the array will potentially contain
-        // extra uninitialized values
-        let size = 0;
-        for (let i = 0; i < numRuns; i++) {
-            size += data[i];
-        }
-        const values = new Int32Array(size);
+    private static decodeRLE(data: Int32Array, numRuns: number, numRleValues: number): Int32Array {
+        const values = new Int32Array(numRleValues);
         let counter = 0;
         for (let i = 0; i < numRuns; i++) {
             const run = data[i];
@@ -165,15 +158,8 @@ class IntegerDecoder {
         return values;
     }
 
-    private static decodeLongRLE(data: BigInt64Array, numRuns: number): BigInt64Array {
-        // Note: if this array is initialied like new Array<number>(numRleValues)
-        // like the java implementation does, the array will potentially contain
-        // extra uninitialized values
-        let size = 0n;
-        for (let i = 0; i < numRuns; i++) {
-            size += data[i];
-        }
-        const values = new BigInt64Array(Number(size))
+    private static decodeLongRLE(data: BigInt64Array, numRuns: number, numRleValues: number): BigInt64Array {
+        const values = new BigInt64Array(Number(numRleValues))
         let counter = 0;
         for (let i = 0; i < numRuns; i++) {
             const run = data[i];
